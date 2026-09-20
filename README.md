@@ -23,6 +23,8 @@ TypeScript は `deno_ast` により型情報を除去してトランスパイル
 - `Native.writeTextFile(path, contents)`
 - `Native.args()` — CLI の `--` 以降に渡した引数
 
+**警告:** Deno 本体のような権限/サンドボックスモデルは存在しない。`Native.readTextFile`/`writeTextFile` はプロセスが読み書きできる任意のパスに無制限にアクセスできるため、信頼できないスクリプトを実行しないこと。
+
 ネイティブ op のエラーは JS の例外として現れる (`try`/`catch` で捕捉できる)。
 
 ### ネイティブ関数を追加する手順

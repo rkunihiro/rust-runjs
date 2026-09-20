@@ -85,6 +85,17 @@ fn check_flag_is_explicitly_unimplemented() {
 }
 
 #[test]
+fn bare_import_fails_with_a_clear_error() {
+    Command::cargo_bin("runjs")
+        .unwrap()
+        .arg(fixture("bare_import.js"))
+        .assert()
+        .failure()
+        .code(1)
+        .stderr(predicate::str::contains("bare/npm-style specifiers are not supported"));
+}
+
+#[test]
 fn missing_script_is_a_usage_error() {
     Command::cargo_bin("runjs")
         .unwrap()

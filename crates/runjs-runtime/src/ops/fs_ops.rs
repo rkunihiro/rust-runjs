@@ -8,7 +8,9 @@ pub fn op_read_text_file(#[string] path: String) -> Result<String, JsErrorBox> {
         .map_err(|e| JsErrorBox::generic(format!("failed to read '{path}': {e}")))
 }
 
-#[op2(fast)]
+// `nofast`: this performs blocking filesystem I/O and allocates, which is not
+// appropriate for the V8 fast-call path even though the signature qualifies.
+#[op2(nofast)]
 pub fn op_write_text_file(
     #[string] path: String,
     #[string] contents: String,
@@ -69,10 +71,15 @@ mod tests {
     #[test]
     fn read_missing_file_errors() {
         let mut runtime = new_runtime();
-        let result = runtime.execute_script(
-            "<test>",
-            "try { Deno.core.ops.op_read_text_file('/nonexistent/path/does-not-exist'); 'no-throw' } catch (e) { 'threw' }",
-        );
-        assert!(result.is_ok());
+        let result = runtime
+            .execute_script(
+                "<test>",
+                "try { Deno.core.ops.op_read_text_file('/nonexistent/path/does-not-exist'); 'no-throw' } catch (e) { 'threw' }",
+            )
+            .unwrap();
+        deno_core::scope!(scope, runtime);
+        let local = deno_core::v8::Local::new(scope, result);
+        let value: String = serde_v8::from_v8(scope, local).unwrap();
+        assert_eq!(value, "threw");
     }
 }

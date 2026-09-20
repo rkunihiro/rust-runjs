@@ -29,7 +29,22 @@ impl ModuleLoader for RunjsModuleLoader {
         referrer: &str,
         _kind: ResolutionKind,
     ) -> Result<ModuleSpecifier, ModuleLoaderError> {
-        resolve_import(specifier, referrer).map_err(JsErrorBox::from_err)
+        let url = resolve_import(specifier, referrer).map_err(|e| {
+            JsErrorBox::generic(format!(
+                "Failed to resolve import \"{specifier}\" from \"{referrer}\": {e} \
+                 (bare/npm-style specifiers are not supported; use a relative or \
+                 absolute local file path, e.g. \"./foo.ts\")"
+            ))
+        })?;
+
+        if url.scheme() != "file" {
+            return Err(JsErrorBox::generic(format!(
+                "Unsupported import \"{url}\": only local file:// imports are \
+                 supported (no remote/network imports)."
+            )));
+        }
+
+        Ok(url)
     }
 
     fn load(
